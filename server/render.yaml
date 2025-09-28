@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: anubis-api
+    env: node
+    plan: free
+    buildCommand: |
+      npm ci
+      npm run build
+    startCommand: |
+      npx prisma db push
+      node dist/index.js
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: anubis-db
+          property: connectionString
+      - key: UPLOAD_DIR
+        value: /opt/uploads
+    disks:
+      - name: uploads
+        mountPath: /opt/uploads
+        sizeGB: 1
+
+databases:
+  - name: anubis-db
+    plan: free
