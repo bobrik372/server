@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String  @id @default(cuid()) // server-only id
+  username      String  @unique
+  displayName   String
+  nickname      String
+  avatarUrl     String?
+  passhash      String
+  passKey       String  @unique // HMAC(passphrase) for lookup-only
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  blockedBy     Block[]  @relation("BlockedBy")
+  blockedUsers  Block[]  @relation("BlockedUsers")
+  settings      String  @default("{}")
+  messagesSent  Message[] @relation("MessagesSent")
+  messagesRecv  Message[] @relation("MessagesRecv")
+}
+
+model Block {
+  id        String @id @default(cuid())
+  blocker   User   @relation("BlockedUsers", fields: [blockerId], references: [id])
+  blockerId String
+  blocked   User   @relation("BlockedBy", fields: [blockedId], references: [id])
+  blockedId String
+  createdAt DateTime @default(now())
+  @@unique([blockerId, blockedId])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  chatId     String
+  type       String
+  text       String?
+  mediaUrl   String?
+  createdAt  DateTime @default(now())
+  deliveredAt DateTime?
+  readAt     DateTime?
+  sender     User     @relation("MessagesSent", fields: [senderId], references: [id])
+  senderId   String
+  recipient  User     @relation("MessagesRecv", fields: [recipientId], references: [id])
+  recipientId String
+}
